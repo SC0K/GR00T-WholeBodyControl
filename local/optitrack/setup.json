@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "status": "preparation_only_adapter_not_implemented",
+  "deployment": "simulation_only",
+  "source": {
+    "type": "optitrack_natnet",
+    "motive_version": null,
+    "natnet_version": null,
+    "server_ip": null,
+    "client_interface_ip": null,
+    "connection_type": "unicast",
+    "skeleton_name": null,
+    "skeleton_id": null,
+    "required_data": "full_body_skeleton",
+    "skeleton_coordinates": "global",
+    "bone_naming_convention": null,
+    "position_units": "meters",
+    "quaternion_order": "xyzw"
+  },
+  "conversion": {
+    "implemented": false,
+    "target": "sonic_smpl_protocol_v3",
+    "bone_mapping_file": null,
+    "reference_calibration_file": null,
+    "require_valid_lower_body": true,
+    "wrist_policy": "neutral_until_orientation_mapping_validated"
+  },
+  "hands": {
+    "mode": "open",
+    "finger_tracking_required": false,
+    "left_hand_joints": [0, 0, 0, 0, 0, 0, 0],
+    "right_hand_joints": [0, 0, 0, 0, 0, 0, 0],
+    "quest_trigger_bridge_implemented": false
+  },
+  "destination": {
+    "transport": "zmq_pub",
+    "bind": "tcp://127.0.0.1:5556",
+    "topic": "pose",
+    "protocol_version": 3,
+    "controller_input_type": "zmq_manager"
+  },
+  "required_runtime_behavior": {
+    "implemented": false,
+    "start_automatically": false,
+    "resume_automatically": false,
+    "tracking_timeout_seconds": 0.35,
+    "on_skeleton_loss": "pause_and_return_to_validated_standing_ready_pose",
+    "on_robot_state_or_control_feedback_loss": "stop_controller",
+    "send_explicit_open_hand_targets_each_frame": true
+  }
+}

@@ -127,3 +127,17 @@ proof of independent leg tracking. Check lower-body availability and how it
 changes when moving one foot while keeping the controllers still, then making
 a small crouch. Full-body control remains disabled pending these observations.
 Spec: https://immersive-web.github.io/body-tracking/
+
+## Future OptiTrack setup (profile only)
+
+The intended body-only mocap configuration is in
+[local/optitrack/setup.json](local/optitrack/setup.json), with setup notes in
+[local/optitrack/README.md](local/optitrack/README.md). It selects full-body
+skeleton input and explicitly open Dex3 hands; finger tracking is not required.
+
+This profile is not consumed by the current runtime. NatNet reception, skeleton
+conversion, and mocap-specific loss recovery still need implementation and
+validation against the actual Motive skeleton. Quest-trigger grasping is an
+optional future integration, not enabled. The current Quest joystick workflow
+is unchanged. Supply Motive version, network addresses and skeleton details to
+complete the live configuration.

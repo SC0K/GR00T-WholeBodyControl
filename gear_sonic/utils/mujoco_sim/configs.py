@@ -339,6 +339,9 @@ class SimLoopConfig(BaseConfig):
     enable_image_publish: bool = False
     """Enable image publishing in simulation"""
 
+    auto_release_suspension: bool = False
+    """Release the startup band on loopback SONIC control feedback (port 5557)."""
+
     camera_port: int = 5555
     """Camera port for image publishing"""
 

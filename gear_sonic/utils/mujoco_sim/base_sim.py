@@ -47,6 +47,7 @@ class DefaultEnv:
         self.num_body_dof = self.robot.NUM_JOINTS
         self.num_hand_dof = self.robot.NUM_HAND_JOINTS
         self.sim_dt = self.config["SIMULATE_DT"]
+        self.auto_release = None
         self.obs = None
         self.torques = np.zeros(self.num_body_dof + self.num_hand_dof * 2)
         self.torque_limit = np.array(self.robot.MOTOR_EFFORT_LIMIT_LIST)
@@ -387,6 +388,11 @@ class DefaultEnv:
         return obs
 
     def sim_step(self):
+        if self.config.get("AUTO_RELEASE_SUSPENSION", False) and self.elastic_band:
+            if self.auto_release is None:
+                from gear_sonic.utils.mujoco_sim.auto_release import AutoRelease
+                self.auto_release = AutoRelease()
+            self.auto_release.poll(self.elastic_band)
         self.obs = self.prepare_obs()
         self.unitree_bridge.PublishLowState(self.obs)
         if self.unitree_bridge.joystick:
@@ -645,6 +651,8 @@ class BaseSimulator:
     def close(self):
         self._running = False
         try:
+            if self.sim_env.auto_release is not None:
+                self.sim_env.auto_release.close()
             if self.sim_env.image_publish_process is not None:
                 self.sim_env.image_publish_process.stop()
             if self.sim_env.viewer is not None:

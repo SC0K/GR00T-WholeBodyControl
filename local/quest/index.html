@@ -1,0 +1,14 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quest · SONIC simulation</title>
+<style>body{background:#101923;color:#f3f6fa;font:20px system-ui;max-width:760px;margin:6vh auto;padding:24px}button{font:inherit;padding:18px;margin:8px 8px 8px 0;border:0;border-radius:12px;background:#83e3c3;color:#10221c}#status{padding:20px;background:#243543;border-radius:12px;white-space:pre-wrap}small{color:#bed0df}canvas{display:none}</style>
+<h1>Quest → SONIC</h1><p>G1 simulation · Quest controllers</p>
+<p>Left thumbstick: walk forward/backward or sideways. Right thumbstick: turn. Triggers: grasp. Headset movement does not command walking.</p>
+<p>Tracking or connection loss returns the robot to neutral standing. The page reconnects automatically and stays paused. Release both thumbsticks, then hold both clicks for 1 second to recalibrate and resume.</p>
+<p>Stand upright, look forward, elbows at your sides bent 90°, palms inward. Hold both controllers comfortably in front and keep still during calibration.</p>
+<p>Controllers: triggers close the robot hands. Hold both thumbsticks clicked for 1 second to request calibration/start; repeat to pause. Release the buttons and hold your neutral pose through the 5-second delay.</p>
+<button id="enter">Enter passthrough</button><button id="vr">Enter VR instead</button>
+<p id="status">Connecting…</p>
+<p>In the PC bridge terminal: <b>go ↵</b> starts standing control, then calibrates teleop after at least 5 seconds. Suspension releases automatically; do not press 9. Keep both controllers tracked and thumbsticks centered. <b>p ↵</b> pauses; <b>o ↵</b> emergency stops. Input tracking loss pauses teleop; release then hold both thumbstick clicks to recalibrate/resume (or use <b>go ↵</b>).</p>
+<small>This page sends tracking. View the robot in the desktop MuJoCo window. No headset robot-camera feed or full-body/leg tracking is included. Exit XR to return to this page.</small>
+<p><a href="/body-check" style="color:#83e3c3">Check headset body-tracking compatibility</a> (diagnostic only)</p>
+<canvas id="canvas"></canvas><script src="/input.js"></script><script src="/quest.js"></script></html>

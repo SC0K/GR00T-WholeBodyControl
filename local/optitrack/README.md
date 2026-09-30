@@ -1,69 +1,151 @@
-# OptiTrack body teleoperation preparation
+# OptiTrack full-body SONIC teleoperation (MuJoCo)
 
-`setup.json` records the intended setup. **It is not loaded by the existing
-Quest bridge or SONIC controller. No NatNet receiver or OptiTrack-to-SMPL
-converter is implemented yet, so this profile does not enable live mocap.**
-The existing Quest controller/joystick workflow remains available.
+The local adapter receives `Skeleton 001` from Motive, calibrates its bone axes,
+converts full-body rotations to SONIC SMPL features, and publishes protocol-v3
+pose windows at 50 Hz. Both Dex3 hands stay open and wrist joint targets stay
+neutral. All robot communication uses loopback simulation.
 
-## Selected setup
+## Verified connection
 
-- Full-body skeleton from Motive: arms, torso and legs; no finger tracking.
-- Open robot hands: explicitly send seven zero joint targets for each Dex3 hand
-  on every output frame, using the same open-hand convention as the local Quest
-  adapter. Do not merely omit hand fields and assume previous grasps are cleared.
-- Neutral robot wrist joint values until the wrist orientation mapping is validated.
-- Motive to Linux over NatNet unicast; use global skeleton coordinates and meters.
-- Convert the skeleton to SONIC protocol v3, publish `pose` on loopback port 5556.
-- Use `zmq_manager` so a future adapter can switch from full-body streaming to a
-  validated standing fallback on tracking loss. The plain `zmq` receiver has
-  different pause behavior and does not inherit the Quest fallback.
-- Simulation first, explicit start and resume. Timeout/fallback settings in the
-  profile are requirements for the future adapter, not an installed watchdog.
+- Motive `3.3.4.1`, advertised NatNet `4.2.0.0`.
+- Motive PC: `192.168.0.118`; Linux: `eno1`, `192.168.0.17`.
+- Unicast, command port `1510`, data port `1511`.
+- Skeleton: `Skeleton 001`, ID `0`, 51 described and received bones.
+- Global coordinates, meters, Z-up geometry; FBX-style bone names.
+- The existing NatNet Linux SDK `4.0.0.0` is used with a requested 4.0 bitstream.
 
-## Details needed from the Motive setup
+Skeleton streaming was disabled in Motive. It was enabled through NatNet's
+`SetProperty,,Skeletons,true` command and verified with the getter and incoming
+frames. The receiver itself does not change Motive settings. If streaming stops,
+check Motive's Skeletons option and the active skeleton. See the official
+[streaming settings](https://docs.optitrack.com/motive/data-streaming) and
+[NatNet commands](https://docs.optitrack.com/developer-tools/natnet-sdk/natnet-remote-requests-commands).
 
-Fill the null connection fields only after checking the actual Motive setup:
+## Launch
 
-1. Motive version and matching NatNet SDK/protocol version.
-2. Motive PC IPv4 address and this Linux PC's interface address on the same network.
-3. Full-body skeleton name/ID and streaming bone naming convention.
-4. A skeleton description (bone names, IDs and hierarchy), plus its reference-pose
-   definition. These determine the mapping and orientation offsets.
+Run these in **three terminals**, from the repository root. Stop any Quest
+bridge first: only one publisher can bind port 5556.
 
-In Motive, enable streaming of the full skeleton and select unicast, global
-skeleton coordinates, and meters. Check the options against your Motive version.
-Raw marker positions or a few rigid bodies are not a complete body skeleton.
-Do not use the Quest hotspot address for the Motive PC unless it actually has
-that address. Leave unknown values null rather than guessing.
+Terminal 1 — MuJoCo:
 
-## Adapter work still required
+```bash
+./local/start-mocap-sim.sh
+```
 
-Receive and validate NatNet skeleton frames; select the configured skeleton;
-convert coordinate axes, bone reference orientations and joint hierarchy;
-produce SMPL local rotations and SONIC root-local joints; resample/buffer frames
-for the deployed encoder; and publish with the existing
-`gear_sonic.utils.teleop.zmq.zmq_planner_sender.pack_pose_message` builder.
+Terminal 2 — SONIC controller:
 
-Protocol v3 requires `smpl_pose`, `smpl_joints`, `joint_pos`, `joint_vel`,
-`frame_index` and body orientation (the built-in publisher uses `body_quat_w`).
-Include explicit `left_hand_joints` and `right_hand_joints` from this profile.
-Use the actual upstream SMPL conventions, not raw Motive positions renamed SMPL.
+```bash
+./local/start-mocap-controller.sh
+```
 
-Validate a still reference pose, individual limb motions, heading, scale,
-tracking loss and explicit resume offline and in MuJoCo before live use.
-Only one publisher can bind port 5556: stop the Quest bridge before running a
-future mocap adapter.
+Wait for **`Init Done`** before requesting control.
 
-## Optional Quest triggers
+Terminal 3 — mocap bridge:
 
-Open hands are selected for now. A future trigger-only receiver can supply grasp
-values independently of the mocap body stream. It must not also publish Quest
-arm/walking commands on port 5556. Trigger loss should open the hands while
-valid mocap body tracking continues. This integration is not implemented;
-changing the JSON alone cannot enable it.
+```bash
+./local/start-mocap.sh
+```
 
-## References
+Commands are entered in **terminal 3**, followed by Enter:
 
-- https://docs.optitrack.com/motive/data-streaming
-- https://www.optitrack.com/software/natnet-sdk
-- ../../docs/source/tutorials/zmq.md
+1. Hold a **T-pose**: stand upright with legs straight, arms straight out sideways
+   and level, palms down. Type `c` and hold still for the one-second capture.
+   Calibration is rejected if the pose is unsuitable, moving, or incomplete.
+2. Lower your arms into a relaxed standing pose. Type `s` to start standing control.
+   The simulator releases its suspension automatically on controller feedback.
+   Do not press `9`, which would toggle the suspension again.
+3. Wait at least five seconds. Match the simulated robot's standing pose, then
+   press Enter on an empty line to enable full-body tracking.
+4. `p` pauses and requests standing; an empty Enter explicitly resumes after
+   you match the standing posture again.
+5. `o` stops the controller. `q` exits the bridge and sends stop commands.
+   Restart terminal 2 after a stop before starting another control session.
+
+Calibration is saved in `.venv_teleop/mocap/calibration.json`. **An actual subject
+T-pose calibration and human-motion trial remain to be performed.** Do not use
+a calibration from a different actor, skeleton definition, or Motive ground frame.
+After loss of skeleton data or an abrupt rotation, recalibration is required:
+stop with `o`, calibrate with `c`, restart the controller, then start again.
+
+The controller and launchers are configured for simulation; they provide no
+real-robot network option. Full-body human tracking and free-standing stability
+have not been validated by the suspended integration smoke tests.
+
+## Receive-only diagnostics
+
+```bash
+./local/optitrack/probe.sh
+./local/start-mocap.sh --monitor 5
+./local/start-mocap.sh --calibrate   # T-pose capture only; no robot publication
+```
+
+The probe prints SDK version, bone names/IDs/hierarchy, and skeleton frame counts.
+It exits 0 if skeleton frames arrive, 3 if descriptions/frames are missing, 1 on
+connection failure, and 2 for configuration/build prerequisites. Output is in
+`.venv_teleop/mocap/probe.log`.
+
+Tracking checks cover missing bones, nonfinite poses, invalid quaternion norms,
+bone lengths/global coordinates, fresh frames, and frame-counter progression.
+This Motive stream reports zero per-bone flags, so the adapter does not claim
+per-bone optical tracking confidence or distinguish measured from inferred poses.
+
+## Mapping and runtime behavior
+
+`retarget.py` defines the body mapping. Motive's two spine segments map to SMPL's
+spine1/spine2; spine3 inherits spine2, so its local rotation is identity. The
+remaining hips, legs, feet, neck, head, collars, arms and wrists map by name.
+Finger bones are ignored. Calibration aligns each source bone's reference axes
+with a common SMPL T-pose basis, and retains heading derived from the hip line.
+SONIC's existing `process_smpl_joints` computes its canonical 24 joint features;
+raw Motive positions are not substituted for SMPL joint positions.
+
+The publisher fills a 15-frame buffer before switching from the standing planner
+to pose tracking. Source loss/staleness beyond 0.35 seconds or an abrupt rotation
+pauses pose tracking, clears calibration, and requests zero-speed standing with
+open hands. Fresh tracking alone never resumes control. Loss of robot state or
+controller feedback requests a stop. No Quest-trigger or finger-tracking input
+is integrated.
+
+`setup.json` stores connection/skeleton selection and documents the fixed runtime
+policy. The adapter reads the connection, skeleton ID and simulation-only setting;
+other fields describe behavior implemented in code, rather than arbitrary runtime
+options. `--calibration` can override the calibration file location.
+
+## Installed native runtime
+
+The `.venv_teleop/mocap/native` directory contains TensorRT `10.13.3.9`, isolated
+CUDA `12.9` headers/runtime/compiler, and the CMake build. ONNX Runtime `1.16.3`
+is reused from `/opt/onnxruntime`. SONIC release encoder/decoder and V2 planner
+models were downloaded using `download_from_hf.py`; TensorRT caches were generated
+for this RTX 4090. The controller launcher prioritizes the bundled Unitree DDS
+libraries to avoid an incompatible mixture with ROS DDS.
+
+Rebuild the installed components:
+
+```bash
+./local/optitrack/build-receiver.sh
+./local/optitrack/build-controller.sh
+```
+
+The NatNet SDK is reused from:
+`/home/sitongchen/keyLM_ros2_ws/src/crl-humanoid-ros/crl_optitrack_ros/optitrack_adaptor/ext/NatNetSDK_linux`.
+Set `NATNET_SDK_ROOT` when rebuilding against another SDK location.
+
+Tests and logs:
+
+```bash
+PYTHONPATH="$PWD/local/optitrack" .venv_teleop/bin/python -m pytest -q local/optitrack/test_mocap.py
+```
+
+Logs, live diagnostic samples, and calibration files are in the ignored
+`.venv_teleop/mocap/` directory. Tests cover calibration axes, heading, lower-body
+rotation, full-buffer startup, open-hand messages, stale/missing data, and explicit
+resume. Synthetic SMPL messages were accepted by the native controller in a
+suspended MuJoCo smoke test with finite state feedback. This is not a human-motion
+or free-standing balance validation.
+
+Final suspended integration check: 347 standing, 250 SMPL-tracking, and 150
+return-to-standing feedback samples were finite; shutdown completed without a
+planner timeout. A native command-handler fix makes stop return immediately
+instead of falling through into planner reinitialization. All 15 mocap unit
+tests pass. Validation processes were stopped after testing.

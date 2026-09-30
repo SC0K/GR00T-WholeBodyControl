@@ -1,35 +1,55 @@
 {
   "schema_version": 1,
-  "status": "preparation_only_adapter_not_implemented",
+  "status": "installed_simulation_adapter_calibration_pending",
   "deployment": "simulation_only",
   "source": {
     "type": "optitrack_natnet",
-    "motive_version": null,
-    "natnet_version": null,
-    "server_ip": null,
-    "client_interface_ip": null,
+    "motive_version": "3.3.4.1",
+    "natnet_version": "4.2.0.0",
+    "server_ip": "192.168.0.118",
+    "client_interface_ip": "192.168.0.17",
     "connection_type": "unicast",
-    "skeleton_name": null,
-    "skeleton_id": null,
+    "skeleton_name": "Skeleton 001",
+    "skeleton_id": 0,
     "required_data": "full_body_skeleton",
     "skeleton_coordinates": "global",
-    "bone_naming_convention": null,
+    "bone_naming_convention": "FBX",
     "position_units": "meters",
-    "quaternion_order": "xyzw"
+    "quaternion_order": "xyzw",
+    "server_command_port": 1510,
+    "server_data_port": 1511,
+    "multicast_address": "239.255.42.99",
+    "up_axis": "Z"
   },
   "conversion": {
-    "implemented": false,
+    "implemented": true,
     "target": "sonic_smpl_protocol_v3",
-    "bone_mapping_file": null,
-    "reference_calibration_file": null,
+    "bone_mapping_file": "local/optitrack/retarget.py",
+    "reference_calibration_file": ".venv_teleop/mocap/calibration.json",
     "require_valid_lower_body": true,
     "wrist_policy": "neutral_until_orientation_mapping_validated"
   },
   "hands": {
     "mode": "open",
     "finger_tracking_required": false,
-    "left_hand_joints": [0, 0, 0, 0, 0, 0, 0],
-    "right_hand_joints": [0, 0, 0, 0, 0, 0, 0],
+    "left_hand_joints": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "right_hand_joints": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
     "quest_trigger_bridge_implemented": false
   },
   "destination": {
@@ -40,12 +60,36 @@
     "controller_input_type": "zmq_manager"
   },
   "required_runtime_behavior": {
-    "implemented": false,
+    "implemented": true,
     "start_automatically": false,
     "resume_automatically": false,
     "tracking_timeout_seconds": 0.35,
     "on_skeleton_loss": "pause_and_return_to_validated_standing_ready_pose",
     "on_robot_state_or_control_feedback_loss": "stop_controller",
     "send_explicit_open_hand_targets_each_frame": true
+  },
+  "last_probe": {
+    "date": "2026-09-29",
+    "local_sdk_version": "4.0.0.0",
+    "server_reachable": true,
+    "skeleton_descriptions": 1,
+    "described_bones": 51,
+    "received_frames": 1442,
+    "frames_with_skeletons": 1442,
+    "coordinates_units_and_reference_pose_verified": false,
+    "global_meter_z_up_geometry_verified": true,
+    "reference_pose_calibrated": false
+  },
+  "validation": {
+    "date": "2026-09-29",
+    "unit_tests_passed": 15,
+    "live_skeleton_geometry_checked": true,
+    "suspended_synthetic_protocol_test_passed": true,
+    "standing_feedback_samples": 347,
+    "pose_feedback_samples": 250,
+    "fallback_feedback_samples": 150,
+    "human_tpose_calibration_completed": false,
+    "human_motion_trial_completed": false,
+    "free_standing_balance_validated": false
   }
 }

@@ -358,6 +358,9 @@ class ZMQManager : public InputInterface {
         
         // Clear hand joints control state
         has_hand_joints_ = false;
+
+        // A stop must not fall through into a planner restart or mode transition.
+        return;
       }
 
       // Delegate based on current mode

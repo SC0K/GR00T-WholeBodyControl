@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "decoupled_wbc"
 dynamic = ["version"]
-readme = "../README.md"
+readme = {text = "NVIDIA Decoupled Whole-Body Control", content-type = "text/plain"}
 classifiers = [
     "Intended Audience :: Science/Research",
     "Development Status :: 3 - Alpha",
@@ -22,7 +22,7 @@ dependencies = [
     "scipy==1.15.3",
     "torch",
 ]
-license = {file = "../LICENSE"}
+license = {text = "Apache-2.0"}
 
 [project.optional-dependencies]
 # Full: all dependencies for the complete decoupled_wbc project
